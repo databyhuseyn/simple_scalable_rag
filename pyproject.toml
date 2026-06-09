@@ -1,0 +1,20 @@
+[project]
+name = "ai101-rag"
+version = "0.1.0"
+description = "Simple Scalable Rag System with Langchain and Qdrant "
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "langchain>=1.3.4",
+    "langchain-anthropic>=1.4.4",
+    "langchain-community>=0.4.2",
+    "langchain-core>=1.4.0",
+    "langchain-huggingface>=1.2.2",
+    "langchain-openai>=1.2.2",
+    "langchain-qdrant>=1.1.0",
+    "langgraph>=1.2.4",
+    "pypdf>=6.13.0",
+    "python-dotenv>=1.2.2",
+    "qdrant-client>=1.18.0",
+    "sentence-transformers>=5.5.1",
+]
