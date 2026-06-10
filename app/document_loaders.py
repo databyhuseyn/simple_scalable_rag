@@ -38,7 +38,7 @@ def pdf_loader():
 
         all_documents.extend(documents)
 
-        print(f'Loaded {len(all_documents)} documents')
+    print(f'Loaded {len(all_documents)} documents')
 
     return all_documents
 
