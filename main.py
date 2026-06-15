@@ -1,33 +1,19 @@
-from dotenv import load_dotenv
-import os
-load_dotenv()
-
 # core dependencies
-from langchain_core import __version__  as core_version
-from langgraph import version as lg_version
-from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
 # local dependencies
-from app.document_loaders import pdf_loader
-from app.chunker import chunk_documents
-from app.vector_db import store_vectors
+
 from app.formatter import format_docs
+from app.retriever import get_retriever
+from app.llm import get_llm
+from app.reranker import rerank
 
 
 def main():
 
-    pdfs = pdf_loader()
-    chunks = chunk_documents(pdfs)
-    vectors = store_vectors(chunks)
-
-    print('Success...')
-
-
-    retriever = vectors.as_retriever(search_type='similarity', search_kwargs={'k':5})
+    retriever = get_retriever()
 
     prompt = ChatPromptTemplate.from_template("""
     You are a helpful assistant which answers questions based on context given below. Answer in conscise manner. 
@@ -41,16 +27,11 @@ def main():
                                               
     Answer:""")
 
-    llm = ChatOpenAI(
-        model = os.getenv("MODEL_NAME"), 
-        api_key = os.getenv("OPENAI_API_KEY"),
-        base_url = os.getenv("BASE_URL"),
-        streaming=True
-    )
+    llm = get_llm()
 
+    
     rag_chain = (
-        {'context': retriever | format_docs, 'question': RunnablePassthrough()}
-        | prompt
+        prompt
         | llm
         | StrOutputParser()
     )
@@ -60,23 +41,23 @@ def main():
     ]
 
     for q in questions:
-        answer = rag_chain.invoke(q)
+
+        docs = retriever.invoke(q)
+        docs = rerank(
+            q, 
+            docs, 
+            top_k=5
+        )
+
+        context = format_docs(docs)
+
+        answer = rag_chain.invoke({
+            "context":context,
+            "question":q
+        })
         print(f'Q: {q}')
         print(f'A: {answer}')
-
-
-    # query = "What are the main causes of engine failure?"
-    # res = vectors.similarity_search_with_score(
-    #     query,
-    #     k=1
-    # )
-
-    # for doc, score in res:
-    #     print("Score:", score)
-    #     print("Text:", doc.page_content[:50])
-    #     print("Source:", doc.metadata)
-    #     print('-' * 50)
-
+        print('-' * 50)
 
 
 if __name__ == "__main__":
